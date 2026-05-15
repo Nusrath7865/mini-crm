@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
-import "./Dashboard.css";
 
 function Dashboard() {
+
   const [leads, setLeads] = useState([]);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [search, setSearch] = useState("");
@@ -12,124 +13,168 @@ function Dashboard() {
     fetchLeads();
   }, []);
 
-  // FETCH LEADS
   const fetchLeads = async () => {
     try {
       const res = await API.get("/leads");
       setLeads(res.data);
-    } catch (err) {
-      console.log("Error fetching leads:", err);
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  // ADD LEAD (FIXED)
   const addLead = async () => {
-    if (!name.trim() || !email.trim()) {
-      alert("Name and Email are required");
-      return;
-    }
-
     try {
+
       await API.post("/leads", {
         name,
         email,
-        source: "Website"
+        status: "new",
       });
 
       fetchLeads();
+
       setName("");
       setEmail("");
-    } catch (err) {
-      console.log("Error adding lead:", err);
-      alert("Failed to add lead");
+
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  // UPDATE STATUS
   const updateStatus = async (id, status) => {
     try {
-      await API.put(`/leads/${id}`, { status });
+
+      await API.put(`/leads/${id}`, {
+        status,
+      });
+
       fetchLeads();
-    } catch (err) {
-      console.log("Error updating status:", err);
+
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  // DELETE LEAD
   const deleteLead = async (id) => {
     try {
+
       await API.delete(`/leads/${id}`);
+
       fetchLeads();
-    } catch (err) {
-      console.log("Error deleting lead:", err);
+
+    } catch (error) {
+      console.log(error);
     }
   };
 
+  const filteredLeads = leads.filter((lead) =>
+    lead.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const contactedLeads = leads.filter(
+    (lead) => lead.status === "contacted"
+  ).length;
+
+  const convertedLeads = leads.filter(
+    (lead) => lead.status === "converted"
+  ).length;
+
   return (
-    <div className="dashboard-container">
-      <div className="overlay">
-        <h1>Mini CRM Dashboard</h1>
+    <div className="dashboard">
 
-        {/* FORM */}
-        <div className="form-section">
-          <input
-            type="text"
-            placeholder="Enter Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+      <h1>Mini CRM Dashboard</h1>
 
-          <input
-            type="email"
-            placeholder="Enter Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+      <div className="stats-container">
 
-          <button
-            onClick={addLead}
-            disabled={!name.trim() || !email.trim()}
-          >
-            Add Lead
-          </button>
+        <div className="stat-box">
+          <h3>Total Leads</h3>
+          <p>{leads.length}</p>
         </div>
 
-        {/* SEARCH */}
+        <div className="stat-box">
+          <h3>Contacted</h3>
+          <p>{contactedLeads}</p>
+        </div>
+
+        <div className="stat-box">
+          <h3>Converted</h3>
+          <p>{convertedLeads}</p>
+        </div>
+
+      </div>
+
+      <div className="form-container">
+
         <input
-          className="search-box"
           type="text"
-          placeholder="Search by name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Enter Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
 
-        {/* LEAD LIST */}
-        <div className="lead-list">
-          {leads
-            .filter((lead) =>
-              lead.name?.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((lead) => (
-              <div className="lead-card" key={lead._id}>
-                <h3>{lead.name}</h3>
-                <p>{lead.email}</p>
-                <p>Status: {lead.status}</p>
+        <input
+          type="email"
+          placeholder="Enter Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-                <button onClick={() => updateStatus(lead._id, "contacted")}>
-                  Contacted
-                </button>
+        <button onClick={addLead}>
+          Add Lead
+        </button>
 
-                <button onClick={() => updateStatus(lead._id, "converted")}>
-                  Converted
-                </button>
-
-                <button onClick={() => deleteLead(lead._id)}>
-                  Delete
-                </button>
-              </div>
-            ))}
-        </div>
       </div>
+
+      <input
+        type="text"
+        placeholder="Search by name"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="search-box"
+      />
+
+      <div className="cards-container">
+
+        {filteredLeads.map((lead) => (
+
+          <div className="card" key={lead._id}>
+
+            <h2>{lead.name}</h2>
+
+            <p>{lead.email}</p>
+
+            <p className={lead.status}>
+              Status: {lead.status}
+            </p>
+
+            <button
+              onClick={() =>
+                updateStatus(lead._id, "contacted")
+              }
+            >
+              Contacted
+            </button>
+
+            <button
+              onClick={() =>
+                updateStatus(lead._id, "converted")
+              }
+            >
+              Converted
+            </button>
+
+            <button
+              onClick={() => deleteLead(lead._id)}
+            >
+              Delete
+            </button>
+
+          </div>
+
+        ))}
+
+      </div>
+
     </div>
   );
 }
