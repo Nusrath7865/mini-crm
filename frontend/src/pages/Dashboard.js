@@ -12,31 +12,57 @@ function Dashboard() {
     fetchLeads();
   }, []);
 
+  // FETCH LEADS
   const fetchLeads = async () => {
-    const res = await API.get("/leads");
-    setLeads(res.data);
+    try {
+      const res = await API.get("/leads");
+      setLeads(res.data);
+    } catch (err) {
+      console.log("Error fetching leads:", err);
+    }
   };
 
+  // ADD LEAD (FIXED)
   const addLead = async () => {
-    await API.post("/leads", {
-      name,
-      email,
-      source: "Website"
-    });
+    if (!name.trim() || !email.trim()) {
+      alert("Name and Email are required");
+      return;
+    }
 
-    fetchLeads();
-    setName("");
-    setEmail("");
+    try {
+      await API.post("/leads", {
+        name,
+        email,
+        source: "Website"
+      });
+
+      fetchLeads();
+      setName("");
+      setEmail("");
+    } catch (err) {
+      console.log("Error adding lead:", err);
+      alert("Failed to add lead");
+    }
   };
 
+  // UPDATE STATUS
   const updateStatus = async (id, status) => {
-    await API.put(`/leads/${id}`, { status });
-    fetchLeads();
+    try {
+      await API.put(`/leads/${id}`, { status });
+      fetchLeads();
+    } catch (err) {
+      console.log("Error updating status:", err);
+    }
   };
 
+  // DELETE LEAD
   const deleteLead = async (id) => {
-    await API.delete(`/leads/${id}`);
-    fetchLeads();
+    try {
+      await API.delete(`/leads/${id}`);
+      fetchLeads();
+    } catch (err) {
+      console.log("Error deleting lead:", err);
+    }
   };
 
   return (
@@ -44,6 +70,7 @@ function Dashboard() {
       <div className="overlay">
         <h1>Mini CRM Dashboard</h1>
 
+        {/* FORM */}
         <div className="form-section">
           <input
             type="text"
@@ -59,9 +86,15 @@ function Dashboard() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <button onClick={addLead}>Add Lead</button>
+          <button
+            onClick={addLead}
+            disabled={!name.trim() || !email.trim()}
+          >
+            Add Lead
+          </button>
         </div>
 
+        {/* SEARCH */}
         <input
           className="search-box"
           type="text"
@@ -70,10 +103,11 @@ function Dashboard() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
+        {/* LEAD LIST */}
         <div className="lead-list">
           {leads
             .filter((lead) =>
-              lead.name.toLowerCase().includes(search.toLowerCase())
+              lead.name?.toLowerCase().includes(search.toLowerCase())
             )
             .map((lead) => (
               <div className="lead-card" key={lead._id}>
